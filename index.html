@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rudra's DevLog &mdash; Code, Bugs & Late Night Experiments</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif],
+            serif: ['Newsreader', Georgia, Cambria, serif],
+            mono: ['JetBrains Mono', monospace]
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Marked Markdown Parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    /* Clean custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
+
+    /* Natural human blog typography */
+    .article-prose {
+      font-size: 1.075rem;
+      line-height: 1.85;
+      color: inherit;
+    }
+    .article-prose h1, .article-prose h2, .article-prose h3 {
+      font-weight: 700;
+      color: inherit;
+      letter-spacing: -0.02em;
+    }
+    .article-prose h1 { font-size: 2rem; margin: 1.8rem 0 0.8rem; }
+    .article-prose h2 { font-size: 1.45rem; margin: 1.6rem 0 0.6rem; }
+    .article-prose h3 { font-size: 1.2rem; margin: 1.3rem 0 0.5rem; }
+    .article-prose p { margin-bottom: 1.25rem; }
+    .article-prose ul { list-style: disc; padding-left: 1.5rem; margin-bottom: 1.25rem; }
+    .article-prose ol { list-style: decimal; padding-left: 1.5rem; margin-bottom: 1.25rem; }
+    .article-prose li { margin-bottom: 0.35rem; }
+    .article-prose blockquote {
+      border-left: 3px solid #10b981;
+      padding-left: 1.1rem;
+      margin: 1.5rem 0;
+      font-style: italic;
+      opacity: 0.9;
+    }
+    .article-prose pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 1.1rem 1.25rem;
+      border-radius: 0.75rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+    }
+    .article-prose code:not(pre code) {
+      background: rgba(16, 185, 129, 0.12);
+      color: #059669;
+      padding: 0.15rem 0.4rem;
+      border-radius: 0.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+    }
+    .dark .article-prose code:not(pre code) {
+      color: #34d399;
+    }
+    .article-prose img {
+      border-radius: 0.75rem;
+      max-width: 100%;
+      height: auto;
+      margin: 1.5rem auto;
+    }
+  </style>
+</head>
+<body class="bg-stone-50 dark:bg-[#0c0f14] text-stone-900 dark:text-stone-100 min-h-screen transition-colors duration-200 antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- ================= TOP NAVIGATION ================= -->
+  <header class="sticky top-0 z-40 bg-stone-50/90 dark:bg-[#0c0f14]/90 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Logo / Author Stamp -->
+      <a href="javascript:void(0)" onclick="showHomeView()" class="flex items-center gap-3 group">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-brand-600 to-emerald-400 text-white font-bold text-sm flex items-center justify-center shadow-sm">
+          R
+        </div>
+        <div>
+          <span class="font-bold text-base tracking-tight text-stone-900 dark:text-white group-hover:text-brand-600 transition">Rudra's DevLog</span>
+          <span class="hidden sm:block text-[11px] text-stone-500 dark:text-stone-400 -mt-0.5">Code, coffee & real developer notes</span>
+        </div>
+      </a>
+
+      <!-- Search Bar -->
+      <div class="relative flex-1 max-w-xs hidden md:block">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"></i>
+        <input 
+          id="searchInput" 
+          type="text" 
+          placeholder="Search my notes..." 
+          class="w-full pl-9 pr-3 py-1.5 text-xs rounded-full bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 focus:outline-none focus:border-brand-500 transition"
+          oninput="handleSearch(this.value)"
+        />
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button 
+          id="bookmarksFilterBtn"
+          onclick="toggleBookmarksFilter()" 
+          title="Saved Posts"
+          class="p-2 text-stone-500 hover:text-brand-600 dark:text-stone-400 dark:hover:text-brand-400 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900 transition flex items-center gap-1"
+        >
+          <i data-lucide="bookmark" class="w-4 h-4"></i>
+          <span id="bookmarksCountBadge" class="hidden text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-brand-500 text-white">0</span>
+        </button>
+
+        <button 
+          onclick="toggleDarkMode()" 
+          title="Toggle Theme"
+          class="p-2 text-stone-500 hover:text-brand-600 dark:text-stone-400 dark:hover:text-brand-400 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-900 transition"
+        >
+          <i id="themeIcon" data-lucide="sun" class="w-4 h-4"></i>
+        </button>
+
+        <button 
+          onclick="openEditorModal()" 
+          class="flex items-center gap-1.5 bg-stone-900 hover:bg-stone-800 dark:bg-brand-600 dark:hover:bg-brand-700 text-white font-medium text-xs sm:text-sm px-3.5 py-2 rounded-lg transition active:scale-95 shadow-sm"
+        >
+          <i data-lucide="pen-tool" class="w-3.5 h-3.5"></i>
+          <span>Write Note</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= AUTHOR INTRO BANNER (REAL HUMAN TOUCH) ================= -->
+  <section id="authorHero" class="border-b border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900/40 py-8 px-4 sm:px-6">
+    <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      <div class="flex items-start gap-4">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white text-xl font-black shadow-md flex-shrink-0">
+          R
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-stone-900 dark:text-white">
+            Hey there, I'm Rudra 👋
+          </h1>
+          <p class="text-xs sm:text-sm text-stone-600 dark:text-stone-400 mt-1 max-w-lg leading-relaxed">
+            I write practical code, make mistakes, and document what actually works. No fluff or corporate buzzwords &mdash; just raw development notes, debugging war stories, and weekend projects.
+          </p>
+          <div class="flex items-center gap-3 mt-3 text-xs text-stone-500 dark:text-stone-400">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Building stuff daily</span>
+            <span>&bull;</span>
+            <span id="statPostCount">0 notes published</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 self-end sm:self-center">
+        <a href="https://github.com" target="_blank" class="px-3 py-1.5 rounded-lg border border-stone-200 dark:border-stone-800 text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition flex items-center gap-1.5">
+          <i data-lucide="github" class="w-3.5 h-3.5"></i> GitHub
+        </a>
+        <button onclick="showAboutModal()" class="px-3 py-1.5 rounded-lg border border-stone-200 dark:border-stone-800 text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition">
+          About Me
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- Categories / Tag Filter Chips -->
+    <div id="categoryBar" class="flex items-center gap-2 overflow-x-auto pb-3 mb-6 scrollbar-none">
+      <!-- Injected by JavaScript -->
+    </div>
+
+    <!-- ================= HOME FEED VIEW ================= -->
+    <div id="homeView">
+      
+      <!-- Filter status indicator if active -->
+      <div id="filterStatusRow" class="hidden items-center justify-between mb-4 pb-2 border-b border-stone-200 dark:border-stone-800">
+        <span id="filterStatusText" class="text-xs font-semibold text-brand-600 dark:text-brand-400"></span>
+        <button onclick="selectCategory('All')" class="text-xs text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 underline">Clear filter</button>
+      </div>
+
+      <!-- Articles Stream (Editorial / Personal Dev Style) -->
+      <div id="articlesStream" class="space-y-6">
+        <!-- Rendered Articles -->
+      </div>
+    </div>
+
+    <!-- ================= ARTICLE READER VIEW ================= -->
+    <article id="readerView" class="hidden">
+      <!-- Back Link -->
+      <button onclick="showHomeView()" class="inline-flex items-center gap-2 text-xs font-semibold text-stone-500 hover:text-brand-600 mb-6 transition group">
+        <i data-lucide="arrow-left" class="w-4 h-4 transform group-hover:-translate-x-1 transition"></i>
+        <span>&larr; Back to all notes</span>
+      </button>
+
+      <!-- Reader Card -->
+      <div class="bg-white dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 rounded-2xl p-6 sm:p-10 shadow-sm">
+        
+        <!-- Header Info -->
+        <div id="readerHeader" class="mb-6"></div>
+
+        <!-- Cover Photo (Optional) -->
+        <div id="readerCoverImage" class="mb-8"></div>
+
+        <!-- Content -->
+        <div id="readerContent" class="article-prose text-stone-800 dark:text-stone-200"></div>
+
+        <!-- Bottom Tags -->
+        <div id="readerTags" class="flex flex-wrap gap-2 pt-6 mt-8 border-t border-stone-100 dark:border-stone-800"></div>
+
+        <!-- Human Reaction Toolbar -->
+        <div class="flex items-center justify-between border-y border-stone-200 dark:border-stone-800 py-3.5 my-8 text-xs">
+          <div class="flex items-center gap-2">
+            <button id="readerLikeBtn" onclick="toggleCurrentArticleLike()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800 font-semibold transition active:scale-95 text-stone-700 dark:text-stone-300">
+              <i data-lucide="heart" class="w-4 h-4 text-rose-500"></i>
+              <span>Helpful (<span id="readerLikeCount">0</span>)</span>
+            </button>
+            <button id="readerBookmarkBtn" onclick="toggleCurrentArticleBookmark()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800 font-semibold transition active:scale-95 text-stone-700 dark:text-stone-300">
+              <i data-lucide="bookmark" class="w-4 h-4 text-brand-500"></i>
+              <span id="readerBookmarkLabel">Save note</span>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="editCurrentArticle()" class="px-2.5 py-1.5 rounded-lg text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5 inline"></i> Edit
+            </button>
+            <button onclick="deleteCurrentArticle()" class="px-2.5 py-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i> Delete
+            </button>
+            <button onclick="copyArticleShareLink()" class="px-2.5 py-1.5 rounded-lg text-stone-500 hover:text-brand-600 hover:bg-stone-100 dark:hover:bg-stone-800 transition">
+              <i data-lucide="share-2" class="w-3.5 h-3.5 inline"></i> Share
+            </button>
+          </div>
+        </div>
+
+        <!-- Comments / Community Discussion -->
+        <section class="mt-8">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-bold">Comments & Discussions</h3>
+            <span id="readerCommentCount" class="text-xs text-stone-400"></span>
+          </div>
+
+          <!-- Add Comment Form -->
+          <form onsubmit="handleCommentSubmit(event)" class="mb-6 p-4 rounded-xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 space-y-3">
+            <input 
+              id="commentAuthorInput" 
+              type="text" 
+              placeholder="Your name or handle..." 
+              required 
+              class="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-stone-950 border border-stone-200 dark:border-stone-800 focus:outline-none focus:border-brand-500"
+            />
+            <textarea 
+              id="commentTextInput" 
+              rows="2" 
+              placeholder="Leave a comment, suggestion, or question..." 
+              required 
+              class="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-stone-950 border border-stone-200 dark:border-stone-800 focus:outline-none focus:border-brand-500"
+            ></textarea>
+            <div class="flex justify-end">
+              <button type="submit" class="px-3.5 py-1.5 bg-stone-900 dark:bg-brand-600 hover:bg-stone-800 dark:hover:bg-brand-700 text-white rounded-lg text-xs font-semibold transition active:scale-95 shadow">
+                Post Comment
+              </button>
+            </div>
+          </form>
+
+          <!-- Comments List -->
+          <div id="commentsList" class="space-y-3"></div>
+        </section>
+
+      </div>
+    </article>
+  </main>
+
+  <!-- ================= WRITE / EDIT NOTE MODAL ================= -->
+  <div id="editorModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
+        <h3 class="font-bold text-base" id="modalTitle">Write a New Note</h3>
+        <button onclick="closeEditorModal()" class="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-4 flex-1">
+        <input type="hidden" id="editingPostId" value="" />
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">Title</label>
+          <input id="postTitleInput" type="text" placeholder="e.g. Why I stopped using heavy frameworks for side projects" class="w-full px-3.5 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-950 text-sm focus:outline-none focus:border-brand-500" />
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">Category</label>
+            <select id="postCategoryInput" class="w-full px-3.5 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-950 text-sm focus:outline-none focus:border-brand-500">
+              <option value="Web Development">Web Development</option>
+              <option value="Debugging Tales">Debugging Tales</option>
+              <option value="Work & Life">Work & Life</option>
+              <option value="Tips & Quick Hacks">Tips & Quick Hacks</option>
+              <option value="Tools & Setup">Tools & Setup</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">Author</label>
+            <input id="postAuthorInput" type="text" placeholder="Rudra" value="Rudra" class="w-full px-3.5 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-950 text-sm focus:outline-none focus:border-brand-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">Tags (Comma-separated)</label>
+          <input id="postTagsInput" type="text" placeholder="javascript, css, productivity" class="w-full px-3.5 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-950 text-sm focus:outline-none focus:border-brand-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-stone-500 mb-1">Cover Image (Optional URL)</label>
+          <input id="postImageInput" type="url" placeholder="https://images.unsplash.com/..." class="w-full px-3.5 py-2 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-950 text-sm focus:outline-none focus:border-brand-500" />
+        </div>
+
+        <!-- Markdown Write / Preview Tabs -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-bold uppercase tracking-wider text-stone-500">Content (Markdown)</label>
+            <div class="flex items-center gap-1 text-xs">
+              <button type="button" onclick="switchEditorTab('write')" id="tabWriteBtn" class="px-2.5 py-0.5 rounded bg-brand-600 text-white font-medium">Write</button>
+              <button type="button" onclick="switchEditorTab('preview')" id="tabPreviewBtn" class="px-2.5 py-0.5 rounded bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400">Preview</button>
+            </div>
+          </div>
+          <textarea id="postContentInput" rows="9" placeholder="Share your honest thoughts, code snippets, or lesson..." class="w-full px-3.5 py-2.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-950 font-mono text-xs focus:outline-none focus:border-brand-500"></textarea>
+          <div id="postContentPreview" class="hidden min-h-[200px] max-h-[300px] overflow-y-auto p-4 rounded-lg border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-950 article-prose text-xs"></div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 border-t border-stone-200 dark:border-stone-800 flex items-center justify-end gap-2 bg-stone-50 dark:bg-stone-900/60">
+        <button onclick="closeEditorModal()" class="px-3.5 py-1.5 text-xs rounded-lg hover:bg-stone-200 dark:hover:bg-stone-800 font-semibold transition">Cancel</button>
+        <button onclick="saveBlogPost()" class="px-4 py-1.5 text-xs rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-semibold transition shadow-sm">Save Note</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ABOUT ME MODAL ================= -->
+  <div id="aboutModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-lg">About Rudra</h3>
+        <button onclick="closeAboutModal()" class="text-stone-400 hover:text-stone-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <p class="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed mb-4">
+        Hey! I'm a software developer passionate about building clean interfaces, writing understandable JavaScript, and avoiding unnecessary complexity.
+      </p>
+      <p class="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed mb-4">
+        This blog is my personal digital garden where I write down things I learn, bugs I solved the hard way, and practical development notes.
+      </p>
+      <div class="pt-4 border-t border-stone-200 dark:border-stone-800 flex justify-between items-center text-xs text-stone-400">
+        <span>Handcrafted with HTML, CSS & JS</span>
+        <button onclick="closeAboutModal()" class="px-3 py-1 rounded bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 font-semibold">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 px-4 py-2.5 rounded-xl shadow-xl text-xs font-semibold flex items-center gap-2 transform translate-y-20 opacity-0 transition duration-300 z-50">
+    <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toastMessage">Saved</span>
+  </div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="border-t border-stone-200 dark:border-stone-800 mt-20 py-8 text-center text-xs text-stone-500">
+    <div class="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p>&copy; 2026 Rudra &bull; Built with clean HTML, CSS & Vanilla JS. Zero bloat, no ads.</p>
+      <div class="flex items-center gap-4">
+        <a href="javascript:void(0)" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="hover:text-brand-600">Back to top &uarr;</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= JAVASCRIPT ================= -->
+  <script>
+    // Authentic, Human-Authored Developer Articles
+    const HUMAN_ARTICLES = [
+      {
+        id: "post-1",
+        title: "Why I stopped using massive CSS frameworks for small weekend projects",
+        category: "Web Development",
+        author: "Rudra",
+        date: "Oct 4, 2026",
+        readTime: "4 min read",
+        coverImage: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=1000&auto=format&fit=crop",
+        tags: ["css", "webdev", "productivity"],
+        likes: 24,
+        isBookmarked: true,
+        content: `Last week, I set out to build a dead-simple portfolio for my friend. My first instinct was the usual: initialize a giant bundle, pull in 200MB of \`node_modules\`, and configure three config files before writing a single line of CSS.\n\nHalfway through waiting for npm to resolve peer dependency warnings, I asked myself: **Why am I doing this for a 3-page site?**\n\n### Back to the Basics\nI deleted the folder, made a clean \`index.html\` and wrote about 80 lines of modern CSS with Flexbox and CSS Grid. \n\nHere's what happened:\n- The page loaded in **0.08 seconds**.\n- Zero build steps or webpack config errors.\n- If something broke, I could inspect it in DevTools and fix it in 5 seconds.\n\n> Sometimes the most "advanced" engineering decision is choosing not to complicate things.\n\nNow for small prototypes and personal tools, I stick to clean HTML and minimal utility styling. It keeps the joy of programming alive.`,
+        comments: [
+          { author: "Rohan Verma", text: "Totally agree! We've made web development way more complicated than it needs to be.", date: "Oct 5, 2026" },
+          { author: "Ananya S.", text: "100%. The instant reload without a bundler spinning up is so refreshing.", date: "Oct 5, 2026" }
+        ]
+      },
+      {
+        id: "post-2",
+        title: "The event listener memory leak that kept me debugging until 2 AM",
+        category: "Debugging Tales",
+        author: "Rudra",
+        date: "Sep 30, 2026",
+        readTime: "5 min read",
+        coverImage: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1000&auto=format&fit=crop",
+        tags: ["javascript", "debugging", "performance"],
+        likes: 41,
+        isBookmarked: false,
+        content: `We've all been there: your app feels lightning fast when you open it, but after 20 minutes of clicking around, the browser tab starts eating 1.2 GB of RAM and animations turn into a slideshow.\n\nI spent 3 hours suspecting heavy image rendering, re-running Lighthouse, and blaming Chrome. \n\n### The Culprit\nIt turned out to be this seemingly innocent function inside a modal popup:\n\n\`\`\`javascript\n// What I wrote:\nfunction openModal() {\n  modal.style.display = 'block';\n  window.addEventListener('keydown', (e) => {\n    if (e.key === 'Escape') closeModal();\n  });\n}\n\`\`\`\n\nEvery time the user opened and closed the modal, a **new closure** was attached to \`window\` and never removed! After 30 modal toggles, 30 duplicate handlers were alive in memory holding references to the entire DOM tree.\n\n### The Simple Fix\nStore the reference and clean it up:\n\n\`\`\`javascript\nconst handleEsc = (e) => {\n  if (e.key === 'Escape') closeModal();\n};\n\nfunction openModal() {\n  modal.style.display = 'block';\n  window.addEventListener('keydown', handleEsc);\n}\n\nfunction closeModal() {\n  modal.style.display = 'none';\n  window.removeEventListener('keydown', handleEsc);\n}\n\`\`\`\n\nLesson learned: Always clean up your global listeners, or your future self will suffer at 2 AM with Chrome DevTools Memory profiler.`,
+        comments: [
+          { author: "Aman Deep", text: "Classic bug! We had this exact issue in our dashboard last month.", date: "Oct 1, 2026" }
+        ]
+      },
+      {
+        id: "post-3",
+        title: "My minimal desk setup & software tools for 2026",
+        category: "Tools & Setup",
+        author: "Rudra",
+        date: "Sep 22, 2026",
+        readTime: "3 min read",
+        coverImage: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1000&auto=format&fit=crop",
+        tags: ["setup", "gear", "workspace"],
+        likes: 19,
+        isBookmarked: false,
+        content: `People often ask what setup I use for daily coding. I used to be obsessed with having 3 monitors and 50 browser extensions. Now, I try to keep everything as distraction-free as possible.\n\n### Hardware\n- **Laptop**: 14-inch laptop (portable and fast enough for everything I do).\n- **Keyboard**: Keychron mechanical keyboard with brown tactile switches.\n- **Mouse**: Logitech MX Master (the horizontal scroll wheel is a lifesaver for wide code files).\n\n### Software I Actually Open Everyday\n1. **VS Code**: Theme: *Tokyo Night*, Font: *JetBrains Mono* with ligatures enabled.\n2. **Windows Terminal**: PowerShell with custom prompt (\`oh-my-posh\`).\n3. **Obsidian**: For rough scratch notes, daily todos, and blog drafts.\n\nKeep your workspace clean, drink plenty of water, and get up to stretch every hour!`,
+        comments: []
+      },
+      {
+        id: "post-4",
+        title: "5 CSS properties I use every single week (that aren't flexbox)",
+        category: "Tips & Quick Hacks",
+        author: "Rudra",
+        date: "Sep 15, 2026",
+        readTime: "4 min read",
+        coverImage: "",
+        tags: ["css", "frontend", "tips"],
+        likes: 33,
+        isBookmarked: false,
+        content: `Flexbox gets all the hype, but there are a few lesser-known CSS properties that save me dozens of lines of code:\n\n### 1. \`accent-color\`\nCustomize checkbox and radio button colors instantly without rebuilding custom SVG checkboxes:\n\`\`\`css\ninput[type="checkbox"] { accent-color: #10b981; }\n\`\`\`\n\n### 2. \`aspect-ratio\`\nNo more padding hacks to maintain 16:9 video embeds or card covers:\n\`\`\`css\n.card-image { aspect-ratio: 16 / 9; object-fit: cover; }\n\`\`\`\n\n### 3. \`scrollbar-gutter: stable\`\nStops the whole layout from awkwardly jumping sideways when content height changes and the browser scrollbar appears.\n\n### 4. \`ch\` unit for readability\nSet max-width for readable paragraphs using character widths:\n\`\`\`css\np { max-width: 68ch; }\n\`\`\`\n\nSimple, standard CSS is getting so good that you rarely need custom hacks anymore.`,
+        comments: []
+      }
+    ];
+
+    const CATEGORIES = ["All", "Web Development", "Debugging Tales", "Work & Life", "Tips & Quick Hacks", "Tools & Setup"];
+
+    // App State - Auto-migrate or load Rudra's notes
+    let posts = JSON.parse(localStorage.getItem('rudra_blog_notes')) || JSON.parse(localStorage.getItem('vidhi_blog_notes')) || HUMAN_ARTICLES;
+    // Ensure existing seed posts reflect Rudra as author
+    posts = posts.map(p => (p.author === "Vidhi" ? { ...p, author: "Rudra" } : p));
+    localStorage.setItem('rudra_blog_notes', JSON.stringify(posts));
+
+    let activeCategory = "All";
+    let searchQuery = "";
+    let showBookmarksOnly = false;
+    let currentArticleId = null;
+
+    function init() {
+      // Theme setup
+      const savedTheme = localStorage.getItem('rudra_blog_theme');
+      const isDark = savedTheme !== 'light';
+      document.documentElement.classList.toggle('dark', isDark);
+      updateThemeIcon();
+
+      renderCategories();
+      renderFeed();
+      updateStats();
+      lucide.createIcons();
+    }
+
+    function persist() {
+      localStorage.setItem('rudra_blog_notes', JSON.stringify(posts));
+      updateStats();
+    }
+
+    function toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('rudra_blog_theme', isDark ? 'dark' : 'light');
+      updateThemeIcon();
+    }
+
+    function updateThemeIcon() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const icon = document.getElementById('themeIcon');
+      if (icon) {
+        icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        lucide.createIcons();
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('statPostCount').innerText = `${posts.length} notes published`;
+      const bookmarkCount = posts.filter(p => p.isBookmarked).length;
+      const badge = document.getElementById('bookmarksCountBadge');
+      if (bookmarkCount > 0) {
+        badge.innerText = bookmarkCount;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    // Categories
+    function renderCategories() {
+      const bar = document.getElementById('categoryBar');
+      bar.innerHTML = CATEGORIES.map(cat => {
+        const isActive = activeCategory === cat && !showBookmarksOnly;
+        return `
+          <button 
+            onclick="selectCategory('${cat}')"
+            class="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+              isActive 
+                ? 'bg-stone-900 dark:bg-brand-600 text-white shadow-sm' 
+                : 'bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:border-brand-500'
+            }"
+          >
+            ${cat}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectCategory(cat) {
+      activeCategory = cat;
+      showBookmarksOnly = false;
+      document.getElementById('bookmarksFilterBtn').classList.remove('text-brand-600', 'dark:text-brand-400');
+      renderCategories();
+      renderFeed();
+    }
+
+    function toggleBookmarksFilter() {
+      showBookmarksOnly = !showBookmarksOnly;
+      const btn = document.getElementById('bookmarksFilterBtn');
+      if (showBookmarksOnly) {
+        btn.classList.add('text-brand-600', 'dark:text-brand-400');
+      } else {
+        btn.classList.remove('text-brand-600', 'dark:text-brand-400');
+      }
+      renderCategories();
+      renderFeed();
+    }
+
+    function handleSearch(val) {
+      searchQuery = val.trim().toLowerCase();
+      renderFeed();
+    }
+
+    // Feed / Articles List
+    function renderFeed() {
+      const stream = document.getElementById('articlesStream');
+      const statusRow = document.getElementById('filterStatusRow');
+      const statusText = document.getElementById('filterStatusText');
+
+      let filtered = posts.filter(p => {
+        if (showBookmarksOnly && !p.isBookmarked) return false;
+        if (!showBookmarksOnly && activeCategory !== "All" && p.category !== activeCategory) return false;
+        if (searchQuery) {
+          const t = p.title.toLowerCase();
+          const c = p.content.toLowerCase();
+          const tags = (p.tags || []).join(' ').toLowerCase();
+          return t.includes(searchQuery) || c.includes(searchQuery) || tags.includes(searchQuery);
+        }
+        return true;
+      });
+
+      if (showBookmarksOnly) {
+        statusText.innerText = "Showing saved bookmarks";
+        statusRow.classList.remove('hidden');
+        statusRow.classList.add('flex');
+      } else if (activeCategory !== "All" || searchQuery) {
+        statusText.innerText = `Filtered: ${activeCategory !== "All" ? activeCategory : ''} ${searchQuery ? `"${searchQuery}"` : ''}`;
+        statusRow.classList.remove('hidden');
+        statusRow.classList.add('flex');
+      } else {
+        statusRow.classList.add('hidden');
+        statusRow.classList.remove('flex');
+      }
+
+      if (filtered.length === 0) {
+        stream.innerHTML = `
+          <div class="py-16 text-center text-stone-400">
+            <p class="text-sm font-semibold">No notes found matching your search.</p>
+            <button onclick="selectCategory('All')" class="mt-2 text-xs text-brand-600 font-bold underline">Show all notes</button>
+          </div>
+        `;
+        return;
+      }
+
+      stream.innerHTML = filtered.map(post => `
+        <article onclick="openReader('${post.id}')" class="group bg-white dark:bg-stone-900/70 border border-stone-200 dark:border-stone-800 rounded-2xl p-5 sm:p-6 hover:border-brand-500/50 hover:shadow-md transition duration-200 cursor-pointer">
+          <div class="flex items-center gap-2 mb-2 text-[11px] font-semibold text-stone-400">
+            <span class="px-2 py-0.5 rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300">${post.category}</span>
+            <span>&bull;</span>
+            <span>${post.date}</span>
+            <span>&bull;</span>
+            <span>${post.readTime}</span>
+          </div>
+
+          <h2 class="text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition mb-2">
+            ${post.title}
+          </h2>
+
+          <p class="text-xs sm:text-sm text-stone-600 dark:text-stone-400 line-clamp-2 leading-relaxed mb-4">
+            ${post.content.replace(/#|\*|`|>|\[|\]/g, '').slice(0, 160)}...
+          </p>
+
+          <div class="flex items-center justify-between pt-3 border-t border-stone-100 dark:border-stone-800/80 text-xs text-stone-400">
+            <div class="flex items-center gap-1.5">
+              ${(post.tags || []).slice(0, 3).map(tag => `<span class="text-[11px] text-stone-500 dark:text-stone-400">#${tag}</span>`).join(' ')}
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="flex items-center gap-1 text-rose-500 font-semibold"><i data-lucide="heart" class="w-3.5 h-3.5"></i> ${post.likes || 0}</span>
+              ${post.comments && post.comments.length ? `<span class="flex items-center gap-1 text-stone-400"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> ${post.comments.length}</span>` : ''}
+              ${post.isBookmarked ? `<i data-lucide="bookmark" class="w-3.5 h-3.5 text-brand-500"></i>` : ''}
+            </div>
+          </div>
+        </article>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    // Reader Mode
+    function openReader(postId) {
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+      currentArticleId = postId;
+
+      document.getElementById('homeView').classList.add('hidden');
+      document.getElementById('authorHero').classList.add('hidden');
+      document.getElementById('categoryBar').classList.add('hidden');
+      const reader = document.getElementById('readerView');
+      reader.classList.remove('hidden');
+
+      // Populate Meta
+      document.getElementById('readerHeader').innerHTML = `
+        <div class="flex items-center gap-2 mb-3 text-xs font-semibold text-stone-400">
+          <span class="px-2 py-0.5 rounded bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold">${post.category}</span>
+          <span>&bull;</span>
+          <span>${post.date}</span>
+          <span>&bull;</span>
+          <span>${post.readTime}</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-stone-900 dark:text-stone-100 mb-4">${post.title}</h1>
+        <div class="flex items-center gap-2.5 text-xs text-stone-500">
+          <div class="w-7 h-7 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center text-xs">R</div>
+          <span>Written by <strong>${post.author}</strong></span>
+        </div>
+      `;
+
+      // Cover image if available
+      document.getElementById('readerCoverImage').innerHTML = post.coverImage ? `
+        <img src="${post.coverImage}" alt="${post.title}" class="w-full max-h-80 object-cover rounded-xl shadow-sm" />
+      ` : '';
+
+      // Render Markdown
+      document.getElementById('readerContent').innerHTML = marked.parse(post.content || '');
+
+      // Tags
+      document.getElementById('readerTags').innerHTML = (post.tags || []).map(t => `
+        <span class="px-2.5 py-1 rounded-md text-xs font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300">#${t}</span>
+      `).join('');
+
+      // Likes & Bookmarks State
+      document.getElementById('readerLikeCount').innerText = post.likes || 0;
+      updateBookmarkState(post.isBookmarked);
+
+      // Comments
+      renderComments(post.comments || []);
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      lucide.createIcons();
+    }
+
+    function showHomeView() {
+      currentArticleId = null;
+      document.getElementById('readerView').classList.add('hidden');
+      document.getElementById('homeView').classList.remove('hidden');
+      document.getElementById('authorHero').classList.remove('hidden');
+      document.getElementById('categoryBar').classList.remove('hidden');
+      renderFeed();
+      lucide.createIcons();
+    }
+
+    function updateBookmarkState(isBookmarked) {
+      const label = document.getElementById('readerBookmarkLabel');
+      const btn = document.getElementById('readerBookmarkBtn');
+      if (isBookmarked) {
+        label.innerText = "Saved";
+        btn.classList.add('bg-brand-50', 'dark:bg-brand-950/40', 'border-brand-500', 'text-brand-600');
+      } else {
+        label.innerText = "Save note";
+        btn.classList.remove('bg-brand-50', 'dark:bg-brand-950/40', 'border-brand-500', 'text-brand-600');
+      }
+    }
+
+    function toggleCurrentArticleLike() {
+      const post = posts.find(p => p.id === currentArticleId);
+      if (!post) return;
+      post.likes = (post.likes || 0) + 1;
+      persist();
+      document.getElementById('readerLikeCount').innerText = post.likes;
+      showToast("Thanks for the feedback! ❤️");
+    }
+
+    function toggleCurrentArticleBookmark() {
+      const post = posts.find(p => p.id === currentArticleId);
+      if (!post) return;
+      post.isBookmarked = !post.isBookmarked;
+      persist();
+      updateBookmarkState(post.isBookmarked);
+      showToast(post.isBookmarked ? "Saved to bookmarks" : "Removed from bookmarks");
+      lucide.createIcons();
+    }
+
+    function copyArticleShareLink() {
+      navigator.clipboard.writeText(window.location.href);
+      showToast("Link copied to clipboard!");
+    }
+
+    // Comments
+    function renderComments(comments) {
+      const list = document.getElementById('commentsList');
+      const count = document.getElementById('readerCommentCount');
+      count.innerText = `${comments.length} comments`;
+
+      if (comments.length === 0) {
+        list.innerHTML = `<p class="text-xs text-stone-400 italic">No comments yet. Be the first to share your thoughts!</p>`;
+        return;
+      }
+
+      list.innerHTML = comments.map(c => `
+        <div class="p-3 rounded-lg bg-stone-50 dark:bg-stone-900/60 border border-stone-200/60 dark:border-stone-800">
+          <div class="flex items-center justify-between mb-1 text-xs">
+            <span class="font-bold text-stone-800 dark:text-stone-200">${c.author}</span>
+            <span class="text-[11px] text-stone-400">${c.date}</span>
+          </div>
+          <p class="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">${c.text}</p>
+        </div>
+      `).join('');
+    }
+
+    function handleCommentSubmit(e) {
+      e.preventDefault();
+      const post = posts.find(p => p.id === currentArticleId);
+      if (!post) return;
+
+      const author = document.getElementById('commentAuthorInput').value.trim();
+      const text = document.getElementById('commentTextInput').value.trim();
+      if (!author || !text) return;
+
+      if (!post.comments) post.comments = [];
+      post.comments.unshift({
+        author,
+        text,
+        date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      });
+
+      persist();
+      renderComments(post.comments);
+      e.target.reset();
+      showToast("Comment added!");
+    }
+
+    // Editor Modal
+    function openEditorModal() {
+      document.getElementById('modalTitle').innerText = "Write a New Note";
+      document.getElementById('editingPostId').value = "";
+      document.getElementById('postTitleInput').value = "";
+      document.getElementById('postCategoryInput').value = "Web Development";
+      document.getElementById('postAuthorInput').value = "Rudra";
+      document.getElementById('postImageInput').value = "";
+      document.getElementById('postTagsInput').value = "";
+      document.getElementById('postContentInput').value = "";
+      switchEditorTab('write');
+      document.getElementById('editorModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeEditorModal() {
+      document.getElementById('editorModal').classList.add('hidden');
+    }
+
+    function switchEditorTab(tab) {
+      const textarea = document.getElementById('postContentInput');
+      const preview = document.getElementById('postContentPreview');
+      const writeBtn = document.getElementById('tabWriteBtn');
+      const previewBtn = document.getElementById('tabPreviewBtn');
+
+      if (tab === 'preview') {
+        preview.innerHTML = marked.parse(textarea.value || '*No content written yet.*');
+        textarea.classList.add('hidden');
+        preview.classList.remove('hidden');
+        previewBtn.classList.add('bg-brand-600', 'text-white');
+        previewBtn.classList.remove('bg-stone-200', 'dark:bg-stone-800', 'text-stone-600', 'dark:text-stone-400');
+        writeBtn.classList.remove('bg-brand-600', 'text-white');
+        writeBtn.classList.add('bg-stone-200', 'dark:bg-stone-800', 'text-stone-600', 'dark:text-stone-400');
+      } else {
+        textarea.classList.remove('hidden');
+        preview.classList.add('hidden');
+        writeBtn.classList.add('bg-brand-600', 'text-white');
+        writeBtn.classList.remove('bg-stone-200', 'dark:bg-stone-800', 'text-stone-600', 'dark:text-stone-400');
+        previewBtn.classList.remove('bg-brand-600', 'text-white');
+        previewBtn.classList.add('bg-stone-200', 'dark:bg-stone-800', 'text-stone-600', 'dark:text-stone-400');
+      }
+    }
+
+    function saveBlogPost() {
+      const editingId = document.getElementById('editingPostId').value;
+      const title = document.getElementById('postTitleInput').value.trim();
+      const category = document.getElementById('postCategoryInput').value;
+      const author = document.getElementById('postAuthorInput').value.trim() || 'Rudra';
+      const coverImage = document.getElementById('postImageInput').value.trim();
+      const tagsRaw = document.getElementById('postTagsInput').value.trim();
+      const content = document.getElementById('postContentInput').value.trim();
+
+      if (!title || !content) {
+        alert("Please enter a title and some content.");
+        return;
+      }
+
+      const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean) : [category.toLowerCase()];
+      const words = content.split(/\s+/).length;
+      const readTime = `${Math.max(1, Math.round(words / 170))} min read`;
+
+      if (editingId) {
+        const post = posts.find(p => p.id === editingId);
+        if (post) {
+          post.title = title;
+          post.category = category;
+          post.author = author;
+          post.coverImage = coverImage;
+          post.tags = tags;
+          post.content = content;
+          post.readTime = readTime;
+        }
+        showToast("Note updated!");
+      } else {
+        const newPost = {
+          id: 'post-' + Date.now(),
+          title,
+          category,
+          author,
+          date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+          readTime,
+          coverImage,
+          tags,
+          likes: 0,
+          isBookmarked: false,
+          content,
+          comments: []
+        };
+        posts.unshift(newPost);
+        showToast("Note published!");
+      }
+
+      persist();
+      closeEditorModal();
+
+      if (currentArticleId && editingId === currentArticleId) {
+        openReader(currentArticleId);
+      } else {
+        showHomeView();
+      }
+    }
+
+    function editCurrentArticle() {
+      const post = posts.find(p => p.id === currentArticleId);
+      if (!post) return;
+
+      document.getElementById('modalTitle').innerText = "Edit Note";
+      document.getElementById('editingPostId').value = post.id;
+      document.getElementById('postTitleInput').value = post.title;
+      document.getElementById('postCategoryInput').value = post.category;
+      document.getElementById('postAuthorInput').value = post.author;
+      document.getElementById('postImageInput').value = post.coverImage || '';
+      document.getElementById('postTagsInput').value = (post.tags || []).join(', ');
+      document.getElementById('postContentInput').value = post.content;
+      switchEditorTab('write');
+      document.getElementById('editorModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function deleteCurrentArticle() {
+      if (!confirm("Are you sure you want to delete this note?")) return;
+      posts = posts.filter(p => p.id !== currentArticleId);
+      persist();
+      showToast("Note deleted");
+      showHomeView();
+    }
+
+    // About Modal
+    function showAboutModal() {
+      document.getElementById('aboutModal').classList.remove('hidden');
+    }
+    function closeAboutModal() {
+      document.getElementById('aboutModal').classList.add('hidden');
+    }
+
+    // Toast
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const text = document.getElementById('toastMessage');
+      text.innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
